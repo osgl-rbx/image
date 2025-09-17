@@ -29,7 +29,7 @@ return {
 
 		local high = hi * 3
 		local low = lo * 3
-
+		-- warn(hi, hi + 1, hi + 2, low, low + 1, low + 2, buffer.len(file.palette))
 		return createRGBAColor(
 			buffer.readu8(palette, high),
 			buffer.readu8(palette, high + 1),

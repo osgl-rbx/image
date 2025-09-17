@@ -7,6 +7,9 @@ export type DynamicImage<T> = {
     header: T,
 
     Encode: (self: DynamicImage<T>, format: ImageFormat.ImageFormat) -> buffer,
+
+    ReadPixel: (x: number, y: number) -> number,
+    ReadPixelRGBA: (x: number, y: number) -> (number, number, number, number)
 }
 
 return nil

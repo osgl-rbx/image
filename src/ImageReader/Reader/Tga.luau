@@ -167,7 +167,7 @@ function Tga.decode(cursor: Cursor)
 				end
 			end
 
-			return Result.ok(width, header, bfr, header)
+			return Result.ok(width, height, bfr, header)
 		elseif header.imageType == 10 or header.imageType == 11 then
 			local totalPixels = width * height
 			local currentPixel = 0
@@ -197,7 +197,7 @@ function Tga.decode(cursor: Cursor)
 				end
 			end
 
-			return Result.ok(width, header, bfr, header)
+			return Result.ok(width, height, bfr, header)
 		else
 			return Result.err(ImageError.Unsupported)
 		end

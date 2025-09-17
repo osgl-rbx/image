@@ -231,7 +231,7 @@ function Png.decode(cursor: Cursor)
 	local scanlineWidth = math.ceil(width * bppRaw)
 	local protectAlpha = bpp ~= 4
 
-	s = pcall(function(...)
+	local s = pcall(function(...)
 		for row = 0, height - 1 do
 			local filterType = newCursor:ReadByte()
 			local scanline = newCursor:ReadByteCollection(scanlineWidth)

@@ -55,10 +55,6 @@ function Jpg.getHeader(cursor: Cursor): ImageResult<JpgHeader>
 			local marker = util.beToLe16(cursor:ReadU16())
 
 			if marker == 0xFFC0 or marker == 0xFFC2 then
-				if marker == 0xffc2 then
-					return Result.err(ImageError.Unsupported)
-				end
-
 				local length = util.beToLe16(cursor:ReadU16())
 				local precision = cursor:ReadByte()
 				local height = util.beToLe16(cursor:ReadU16())

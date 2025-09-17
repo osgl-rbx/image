@@ -31,10 +31,14 @@ function Convert.fourBit(fileData, scanlineWidth: number, scanline: buffer, newS
 		local byte = buffer.readu8(testBuff, i)
 		local index1 = bit32.rshift(byte, 4)
 		local index2 = bit32.band(byte, 0x0F)
-
 		local rgba1, rgba2 = fourBit(fileData, index1, index2)
-		buffer.writeu32(newScan, i * 8, rgba1)
-		buffer.writeu32(newScan, i * 8 + 4, rgba2)
+
+		-- pixel index, not byte index
+		local pixelIndex = i * 2
+		buffer.writeu32(newScan, pixelIndex * 4, rgba1) -- first pixel
+		if (pixelIndex + 1) * 4 < buffer.len(newScan) then
+			buffer.writeu32(newScan, (pixelIndex + 1) * 4, rgba2) -- second pixel
+		end
 	end
 end
 
