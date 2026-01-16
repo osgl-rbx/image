@@ -52,42 +52,16 @@ function Tga.getHeader(cursor: Cursor): ImageResult<TgaHeader>
 
 		local pixelDepth = headerCursor:ReadByte()
 		local imageDescriptor = headerCursor:ReadByte()
-
-		local validImageTypes = { [0] = true, [1] = true, [2] = true, [3] = true, [9] = true, [10] = true, [11] = true }
+		
 		local validPixelDepths = { [24] = true, [32] = true }
-
-		if not validImageTypes[imageType] then
-			error("")
-		end
 
 		if not validPixelDepths[pixelDepth] then
 			return Result.err(ImageError.Unsupported)
 		end
 
 		local width, height = dimensions.width, dimensions.height
-		if width <= 0 or height <= 0 or width > 1024 or height > 1024 then
+		if width <= 0 or height <= 0 then
 			return Result.err(ImageError.Unsupported)
-		end
-
-		if colorMapType ~= 0 and colorMapType ~= 1 then
-			error("")
-			return Result.err(ImageError.Decoding)
-		end
-
-		if colorMapType == 1 then
-			if colorMapLength == 0 then
-				error("")
-				return Result.err(ImageError.Decoding)
-			end
-			if
-				colorMapEntrySize ~= 15
-				and colorMapEntrySize ~= 16
-				and colorMapEntrySize ~= 24
-				and colorMapEntrySize ~= 32
-			then
-				error("")
-				return Result.err(ImageError.Decoding)
-			end
 		end
 
 		return Result.ok({
@@ -155,13 +129,24 @@ function Tga.decode(cursor: Cursor)
 		if header.imageType == 2 or header.imageType == 3 then
 			-- Uncompressed
 			local is24Bit = header.pixelDepth == 24
-			for y = 0, height - 1 do
+			
+			local yStart, yEnd, yDir = 0, height - 1, 1
+			
+			if header.imageDescriptor == 0 then -- Image is vertically flipped
+				yStart, yEnd, yDir = yEnd, yStart, -1
+			end
+			
+			for y = yStart, yEnd, yDir do
 				for x = 0, width - 1 do
 					if is24Bit then
 						local b, g, r = cursor:ReadByte(), cursor:ReadByte(), cursor:ReadByte()
 						buffer.writeu32(bfr, (y * width + x) * 4, createRGBAColor(r, g, b))
 					elseif is32Bit then
+						local alphaBits = bit32.band(header.imageDescriptor, 0x0F)
 						local b, g, r, a = cursor:ReadByte(), cursor:ReadByte(), cursor:ReadByte(), cursor:ReadByte()
+						
+						if alphaBits == 0 then a = 255 end -- ignore alpha if alphaBits is blank
+					
 						buffer.writeu32(bfr, (y * width + x) * 4, createRGBAColor(r, g, b, a))
 					end
 				end
@@ -196,8 +181,25 @@ function Tga.decode(cursor: Cursor)
 					end
 				end
 			end
+			
+			-- Vertically flip the buffer
+			local bufferUnflipped = buffer.create(width * height * 4)
+			
+			for y = 0, height - 1 do
+				local sourceIndex = y * width * 4
+				local targetIndex = (height - 1 - y) * width * 4
 
-			return Result.ok(width, height, bfr, header)
+				-- Copy a row of the image straight onto the main buffer
+				buffer.copy(
+					bufferUnflipped,
+					targetIndex,
+					bfr,
+					sourceIndex,
+					width * 4
+				)
+			end
+
+			return Result.ok(width, height, bufferUnflipped, header)
 		else
 			return Result.err(ImageError.Unsupported)
 		end
